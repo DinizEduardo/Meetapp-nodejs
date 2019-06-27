@@ -17,7 +17,6 @@ class User extends Model {
     // antes de salvar ele vai executar isso
     // já que essa é a classe da "tabela"
     this.addHook('beforeSave', async user => {
-      console.log(user);
       if (user.password) {
         user.password_hash = await bcrypt.hash(user.password, 8);
       }
