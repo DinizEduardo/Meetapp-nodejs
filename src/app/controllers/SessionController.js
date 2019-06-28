@@ -1,4 +1,7 @@
 import jwt from 'jsonwebtoken';
+
+import authConfig from '../../config/auth';
+
 import User from '../models/User';
 
 class SessionController {
@@ -14,22 +17,22 @@ class SessionController {
       return res.status(401).json({ error: 'Password does not match' });
     }
 
-    const { id, name } = User;
+    const { id, name } = user;
 
     // jwt.sign recebe 3 parametros
     // 1. O valor que estará na primeira parte do token
     // 2. uma string para criptografar o token
-    //    Recomendado usar MD5 ONLINE e escrever algo UNICO.
+    //      Recomendado usar MD5 ONLINE e escrever algo UNICO.
     // 3. Um objeto com algumas informações referentes ao token
-    //    Como por exemplo quanto tempo o token é valido (expiresIn)
+    //      Como por exemplo quanto tempo o token é valido (expiresIn)
     return res.json({
       user: {
         id,
         name,
         email,
       },
-      token: jwt.sign({ id }, '56b5e707835eaf1f8fae88d29f6f3a80', {
-        expiresIn: '7d',
+      token: jwt.sign({ id }, authConfig.secret, {
+        expiresIn: authConfig.expiresIn,
       }),
     });
   }

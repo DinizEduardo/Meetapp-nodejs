@@ -47,21 +47,24 @@ class UserController {
       return res.status(400).json({ error: 'Validation fails' });
     }
 
-    const user = await User.findByPk(req.body.id);
+    // req.userId é definida dentro da middleware auth.js
+    const user = await User.findByPk(req.userId);
     // encontra o usuario que quer dar update
     // coloca dentro da variavel que via dar update
     const { email } = req.body;
+    if (email) {
+      if (email !== user.email) {
+        const emailExists = await User.findOne({
+          where: { email },
+        });
 
-    if (email !== user.email) {
-      const emailExists = await User.findOne({
-        where: { email },
-      });
-
-      if (emailExists) {
-        return res.status(400).json({ error: 'Email already exists' });
+        if (emailExists) {
+          return res.status(400).json({ error: 'Email already exists' });
+        }
       }
     }
-
+    // const id;
+    // const name;
     const { id, name } = await user.update(req.body);
 
     return res.json({
