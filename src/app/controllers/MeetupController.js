@@ -1,8 +1,63 @@
 import * as Yup from 'yup';
+
+import { isBefore, startOfHour, parseISO } from 'date-fns';
 import Meetup from '../models/Meetup';
 import File from '../models/File';
 
 class MeetupController {
+  async update(req, res) {
+    const { userId } = req;
+    const meetup = await Meetup.findByPk(req.params.id);
+
+    if (!meetup) {
+      return res.status(400).json({ error: 'Meetup not found' });
+    }
+
+    if (meetup.id_user !== userId) {
+      return res.status(400).json({ error: 'Its not yours' });
+    }
+
+    const hourStart = startOfHour(parseISO(meetup.date));
+
+    if (isBefore(hourStart, new Date())) {
+      return res.status(400).json({ error: 'Cant change past meetups' });
+    }
+
+    await meetup.update(req.body);
+
+    return res.json(meetup);
+  }
+
+  async delete(req, res) {
+    const { userId } = req;
+
+    const meetup = await Meetup.findByPk(req.params.id);
+
+    if (!meetup) {
+      return res.status(400).json({ error: 'Meetup not found' });
+    }
+
+    if (meetup.id_user !== userId) {
+      return res.status(400).json({ error: 'Its not yours' });
+    }
+
+    const hourStart = startOfHour(parseISO(meetup.date));
+
+    if (isBefore(hourStart, new Date())) {
+      return res.status(400).json({ error: 'Cant delete past meetups' });
+    }
+
+    meetup.destroy();
+
+    return res.json({ message: 'deleted' });
+  }
+
+  async index(req, res) {
+    const meetups = await Meetup.findAll({ where: { id_user: req.userId } });
+
+    return res.json(meetups);
+  }
+
   async store(req, res) {
     const schema = Yup.object().shape({
       title: Yup.string()
@@ -25,6 +80,12 @@ class MeetupController {
     const file = await File.findByPk(req.body.id_file);
     if (!file) {
       return res.json({ error: 'id_file not found' });
+    }
+
+    const hourStart = startOfHour(parseISO(req.body.date));
+
+    if (isBefore(hourStart, new Date())) {
+      return res.status(400).json({ error: 'Past dates are not permitted' });
     }
 
     const id_user = req.userId;
