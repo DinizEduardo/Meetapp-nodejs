@@ -2,10 +2,19 @@ import { startOfHour, isBefore, parseISO } from 'date-fns';
 import Subscription from '../models/Subscription';
 import Meetup from '../models/Meetup';
 import User from '../models/User';
+import Mail from '../../lib/Mail';
 
 class SubscriptionController {
   async store(req, res) {
-    const meetup = await Meetup.findByPk(req.params.id);
+    const meetup = await Meetup.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'email'],
+        },
+      ],
+    });
+
     if (!meetup) {
       return res.status(400).json({ error: 'Meetup not found' });
     }
@@ -57,6 +66,13 @@ class SubscriptionController {
         .status(400)
         .json({ error: 'Cant subscribe to two meetups at the same time' });
     }
+
+    // meetup.User.email
+    await Mail.sendMail({
+      to: `${meetup.User.name} <${meetup.User.email}>`,
+      subject: 'Nova inscrição',
+      text: `Novo usuario inscrito no seu meetup: ${meetup.title}`,
+    });
 
     const subscription = await Subscription.create({
       id_user: userId,
