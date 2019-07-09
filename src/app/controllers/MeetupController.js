@@ -1,8 +1,16 @@
 import * as Yup from 'yup';
 
-import { isBefore, startOfHour, parseISO } from 'date-fns';
+import {
+  isBefore,
+  startOfHour,
+  parseISO,
+  startOfDay,
+  endOfDay,
+} from 'date-fns';
+import { Op } from 'sequelize';
 import Meetup from '../models/Meetup';
 import File from '../models/File';
+import User from '../models/User';
 
 class MeetupController {
   async update(req, res) {
@@ -53,7 +61,26 @@ class MeetupController {
   }
 
   async index(req, res) {
-    const meetups = await Meetup.findAll({ where: { id_user: req.userId } });
+    const {
+      date = new Date().toISOString().split('T')[0], // pega apenas YYYY-MM-DD da data atual
+      page = 1,
+    } = req.query;
+    // console.log(date);
+    const parsedDate = parseISO(date);
+
+    const meetups = await Meetup.findAll({
+      where: {
+        date: { [Op.between]: [startOfDay(parsedDate), endOfDay(parsedDate)] },
+      },
+      limit: 10,
+      offset: (page - 1) * 10,
+      include: [
+        {
+          model: User,
+          attributes: ['name', 'email'],
+        },
+      ],
+    });
 
     return res.json(meetups);
   }

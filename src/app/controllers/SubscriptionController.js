@@ -85,16 +85,21 @@ class SubscriptionController {
   async index(req, res) {
     const users = await Subscription.findAll({
       where: {
-        id_meetup: req.params.id,
+        id_user: req.userId,
       },
       attributes: [],
       include: [
+        {
+          model: Meetup,
+          required: true,
+        },
         {
           model: User,
           required: true,
           attributes: ['name', 'email'],
         },
       ],
+      order: [[Meetup, 'date']],
     });
     return res.json(users);
   }
